@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 尾牙榮耀盛典</title>
+    <style>
+        :root {
+            --gold: #FFD700;
+            --red: #b30000;
+            --dark-red: #4a0000;
+        }
+
+        body {
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background: radial-gradient(circle at center, #3d0000 0%, #000 100%);
+            color: #fff;
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* 背景動態裝飾 */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .header { margin-top: 40px; z-index: 10; }
+
+        h1 {
+            font-size: 3.5rem;
+            color: var(--gold);
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5), 0 0 40px rgba(255, 215, 0, 0.3);
+            letter-spacing: 8px;
+            margin: 0;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            width: 90%;
+            max-width: 1400px;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 5;
+        }
+
+        .lottery-box {
+            width: 600px;
+            height: 450px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 4px solid var(--gold);
+            border-radius: 30px;
+            box-shadow: inset 0 0 30px rgba(255, 215, 0, 0.2), 0 0 50px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #prize-label {
+            position: absolute;
+            top: -25px;
+            background: linear-gradient(to right, #FFD700, #FFA500);
+            color: #000;
+            padding: 8px 40px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        #display-name {
+            font-size: 7rem;
+            font-weight: 800;
+            color: #fff;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+            margin-bottom: 20px;
+        }
+
+        #draw-btn {
+            font-size: 2.5rem;
+            padding: 15px 70px;
+            border-radius: 60px;
+            border: none;
+            background: linear-gradient(180deg, #FFD700 0%, #B8860B 100%);
+            color: #4a0000;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 10px 0 #8b6508, 0 15px 25px rgba(0,0,0,0.5);
+            transition: 0.1s;
+        }
+        #draw-btn:active { transform: translateY(6px); box-shadow: 0 4px 0 #8b6508; }
+
+        .history-panel {
+            width: 300px;
+            height: 500px;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid #444;
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .history-panel h3 { color: var(--gold); border-bottom: 2px solid var(--gold); padding-bottom: 10px; }
+        #history-list { flex: 1; overflow-y: auto; list-style: none; padding: 0; margin: 0; text-align: left;}
+        #history-list li { padding: 10px; border-bottom: 1px solid #333; font-size: 1.2rem; animation: fadeIn 0.5s; }
+
+        .mode-selector { margin-bottom: 30px; display: flex; gap: 15px; }
+        .mode-btn { padding: 10px 25px; border-radius: 5px; border: 1px solid var(--gold); background: transparent; color: var(--gold); cursor: pointer; }
+        .mode-btn.active { background: var(--gold); color: #000; }
+        #btn-grand { display: none; border-color: #ff00cc; color: #ff00cc; }
+
+        #admin-modal {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: #222; border: 2px solid var(--gold); padding: 20px; border-radius: 10px; z-index: 100;
+            width: 400px;
+        }
+        textarea { width: 100%; height: 120px; margin-top: 10px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+    </style>
+</head>
+<body>
+
+    <audio id="audio-roll" src="roll.mp3" loop></audio>
+    <audio id="audio-win" src="win.mp3"></audio>
+
+    <div class="header">
+        <h1>LUCKY DRAW 尾牙慶典</h1>
+    </div>
+
+    <div class="main-container">
+        <div class="lottery-box">
+            <div id="prize-label">一般獎</div>
+            <div id="display-name">READY</div>
+            <button id="draw-btn" onclick="handleDraw()">開始抽獎</button>
+        </div>
+
+        <div class="history-panel">
+            <h3>🏆 榮耀榜</h3>
+            <ul id="history-list"></ul>
+        </div>
+    </div>
+
+    <div class="mode-selector">
+        <button class="mode-btn active" onclick="setMode('normal', this)">一般獎</button>
+        <button class="mode-btn" onclick="setMode('bonus', this)">現場加碼獎</button>
+        <button id="btn-grand" class="mode-btn" onclick="setMode('grand', this)">👑 終極頭獎</button>
+    </div>
+
+    <div style="color: #444; font-size: 0.8rem; margin-bottom: 10px;">按下鍵盤 M 開啟設定 | S 開啟頭獎</div>
+
+    <div id="admin-modal">
+        <h3>⚙️ 後台名單管理</h3>
+        <label>參加人員名單 (每行一人)：</label>
+        <textarea id="list-all">林綺慧&#10;陳韋伶&#10;林紫瑩&#10;袁宇瑄&#10;黃郁綾&#10;李貞璇&#10;曾雪倩&#10;郭宇仁&#10;張詠絜&#10;陳婷&#10;李國齊&#10;莊明春&#10;黃龍月&#10;王盈惠&#10;陳俐雯&#10;游筱柔&#10;賈維倫&#10;王信偉&#10;施蓉幸&#10;黃千凡&#10;林純如&#10;吳昇達&#10;林芊妤&#10;陳威霖&#10;曾鈺婷&#10;李孟樺&#10;李婉瑛&#10;陳惠琴&#10;陳曉佩&#10;王菀柔
+
+</textarea>
+        <br><br>
+        <label>排除大獎名單 (這幾人不能抽加碼/頭獎)：</label>
+        <textarea id="list-exclude">陳威霖&#10;曾鈺婷&#10;林芊妤</textarea>
+        <br><br>
+        <button onclick="document.getElementById('admin-modal').style.display='none'" style="width:100%; padding:10px;">關閉並儲存</button>
+    </div>
+
+    <script>
+        let currentMode = 'normal';
+        let isRolling = false;
+        let timer = null;
+        let winners = [];
+
+        // 音效物件
+        const audioRoll = document.getElementById('audio-roll');
+        const audioWin = document.getElementById('audio-win');
+
+        function setMode(mode, btn) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('prize-label').innerText = btn.innerText;
+            document.getElementById('display-name').innerText = "READY";
+        }
+
+        function handleDraw() {
+            const btn = document.getElementById('draw-btn');
+            const display = document.getElementById('display-name');
+            
+            const all = document.getElementById('list-all').value.split('\n').map(n => n.trim()).filter(n => n);
+            const exclude = document.getElementById('list-exclude').value.split('\n').map(n => n.trim()).filter(n => n);
+            
+            let pool = all.filter(n => !winners.includes(n));
+            if (currentMode === 'bonus' || currentMode === 'grand') {
+                pool = pool.filter(n => !exclude.includes(n));
+            }
+
+            if (!isRolling) {
+                if (pool.length === 0) { alert("名單已抽完或無符合資格者！"); return; }
+                
+                isRolling = true;
+                btn.innerText = "STOP";
+                
+                // 播放鼓聲 (循環播放)
+                audioRoll.currentTime = 0;
+                audioRoll.play().catch(e => console.log("需點擊頁面以播放音效"));
+                
+                timer = setInterval(() => {
+                    display.innerText = pool[Math.floor(Math.random() * pool.length)];
+                }, 60);
+            } else {
+                clearInterval(timer);
+                isRolling = false;
+
+                // 停止鼓聲，播放中獎聲
+                audioRoll.pause();
+                audioWin.currentTime = 0;
+                audioWin.play();
+
+                const winner = pool[Math.floor(Math.random() * pool.length)];
+                display.innerText = winner;
+                winners.push(winner);
+                
+                const li = document.createElement('li');
+                li.innerHTML = `<span style="color:var(--gold)">●</span> ${winner} <small>(${document.getElementById('prize-label').innerText})</small>`;
+                document.getElementById('history-list').prepend(li);
+                
+                btn.innerText = "NEXT";
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'm') {
+                const modal = document.getElementById('admin-modal');
+                modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
+            }
+            if (e.key.toLowerCase() === 's') {
+                const gb = document.getElementById('btn-grand');
+                gb.style.display = gb.style.display === 'block' ? 'none' : 'block';
+            }
+        });
+    </script>
+</body>
+</html>
